@@ -17,13 +17,15 @@ app.use(express.json()); // For parsing application/json
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
 // Swagger UI route
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  swaggerOptions: {
-    persistAuthorization: true,
-  },
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "School Management System API Documentation"
-}));
+app.use(
+  '/api-docs',
+  ...swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: { persistAuthorization: true },
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'School Management System API Documentation',
+  })
+);
 
 // Routes
 app.use('/api', mainRouter); // Prefix all routes with /api
