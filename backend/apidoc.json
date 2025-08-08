@@ -1,0 +1,2606 @@
+var options = {
+    "swaggerDoc": {
+      "openapi": "3.0.0",
+      "info": {
+        "title": "School Management System API",
+        "version": "1.0.0",
+        "description": "API documentation for the School Management System",
+        "contact": {
+          "name": "API Support",
+          "email": "support@schoolmanagementsystem.com"
+        },
+        "license": {
+          "name": "MIT",
+          "url": "https://opensource.org/licenses/MIT"
+        }
+      },
+      "servers": [
+        {
+          "url": "http://localhost:3000/api",
+          "description": "Development server"
+        }
+      ],
+      "components": {
+        "securitySchemes": {
+          "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+          }
+        },
+        "schemas": {
+          "Error": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              },
+              "code": {
+                "type": "string",
+                "description": "Error code"
+              }
+            }
+          },
+          "User": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "ADMIN",
+                  "TEACHER",
+                  "PARENT"
+                ]
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "readOnly": true
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "password": {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              }
+            },
+            "required": [
+              "email",
+              "password",
+              "role"
+            ]
+          },
+          "LoginRequest": {
+            "type": "object",
+            "required": [
+              "phone",
+              "password"
+            ],
+            "properties": {
+              "phone": {
+                "type": "string",
+                "example": "+1234567890"
+              },
+              "password": {
+                "type": "string",
+                "format": "password",
+                "example": "password123"
+              }
+            }
+          },
+          "LoginResponse": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "JWT token"
+              },
+              "user": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "FeeCategory": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "baseAmount": {
+                "type": "number",
+                "format": "float"
+              }
+            }
+          },
+          "StudentFeeAssignment": {
+            "type": "object",
+            "required": [
+              "studentId",
+              "feeCategoryId"
+            ],
+            "properties": {
+              "studentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "feeCategoryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discountAmount": {
+                "type": "number",
+                "format": "float",
+                "default": 0
+              }
+            }
+          },
+          "TimetableSlot": {
+            "type": "object",
+            "required": [
+              "dayOfWeek",
+              "startTime",
+              "endTime",
+              "currentClass",
+              "subject"
+            ],
+            "properties": {
+              "dayOfWeek": {
+                "type": "string",
+                "enum": [
+                  "MONDAY",
+                  "TUESDAY",
+                  "WEDNESDAY",
+                  "THURSDAY",
+                  "FRIDAY",
+                  "SATURDAY",
+                  "SUNDAY"
+                ]
+              },
+              "startTime": {
+                "type": "string",
+                "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+                "example": "09:00"
+              },
+              "endTime": {
+                "type": "string",
+                "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+                "example": "10:00"
+              },
+              "currentClass": {
+                "type": "string"
+              },
+              "section": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "teacherId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Parent": {
+            "type": "object",
+            "required": [
+              "name",
+              "email",
+              "phone"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              }
+            }
+          },
+          "Student": {
+            "type": "object",
+            "required": [
+              "name",
+              "dateOfBirth",
+              "class"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date"
+              },
+              "class": {
+                "type": "string"
+              },
+              "section": {
+                "type": "string"
+              },
+              "rollNumber": {
+                "type": "string"
+              }
+            }
+          },
+          "ParentStudentMapping": {
+            "type": "object",
+            "required": [
+              "parentId",
+              "studentId"
+            ],
+            "properties": {
+              "parentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "studentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "relationship": {
+                "type": "string",
+                "enum": [
+                  "FATHER",
+                  "MOTHER",
+                  "GUARDIAN"
+                ]
+              }
+            }
+          },
+          "Payment": {
+            "type": "object",
+            "required": [
+              "studentId",
+              "amount",
+              "feeAssignmentId"
+            ],
+            "properties": {
+              "studentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "amount": {
+                "type": "number",
+                "format": "float"
+              },
+              "feeAssignmentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "paymentDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "paymentMethod": {
+                "type": "string",
+                "enum": [
+                  "CASH",
+                  "BANK_TRANSFER",
+                  "CHECK"
+                ]
+              }
+            }
+          },
+          "AlternateTimetable": {
+            "type": "object",
+            "required": [
+              "date",
+              "slots"
+            ],
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TimetableSlot"
+                }
+              }
+            }
+          },
+          "Attendance": {
+            "type": "object",
+            "required": [
+              "studentId",
+              "date",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "studentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PRESENT",
+                  "ABSENT",
+                  "LATE"
+                ]
+              },
+              "markedById": {
+                "type": "string",
+                "format": "uuid",
+                "readOnly": true
+              },
+              "remarks": {
+                "type": "string"
+              }
+            }
+          },
+          "AttendanceUpdate": {
+            "type": "object",
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PRESENT",
+                  "ABSENT",
+                  "LATE"
+                ]
+              },
+              "remarks": {
+                "type": "string"
+              }
+            }
+          },
+          "MessageCreateRequest": {
+            "type": "object",
+            "required": [
+              "recipientId",
+              "content"
+            ],
+            "properties": {
+              "recipientId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID of the message recipient"
+              },
+              "content": {
+                "type": "string",
+                "description": "Message content"
+              }
+            }
+          },
+          "MessageResponse": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content": {
+                "type": "string"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "sender": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                }
+              },
+              "recipient": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "Notification": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "QUERY_ASSIGNED",
+                  "QUERY_UPDATED",
+                  "QUERY_RESOLVED",
+                  "FEE_REMINDER"
+                ]
+              },
+              "content": {
+                "type": "string"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "relatedId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID of the related entity (e.g., query ID, fee ID)"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "QueryCreateRequest": {
+            "type": "object",
+            "required": [
+              "studentId",
+              "subject",
+              "message"
+            ],
+            "properties": {
+              "studentId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID of the student the query is about"
+              },
+              "subject": {
+                "type": "string",
+                "description": "Subject or title of the query"
+              },
+              "message": {
+                "type": "string",
+                "description": "Detailed message or question"
+              }
+            }
+          },
+          "QueryResponse": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "OPEN",
+                  "IN_PROGRESS",
+                  "RESOLVED",
+                  "CLOSED"
+                ]
+              },
+              "resolutionComment": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "parent": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "student": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedTo": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "FeeSummary": {
+            "type": "object",
+            "properties": {
+              "totalFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "collectedFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "pendingFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalStudents": {
+                "type": "integer"
+              },
+              "studentsWithDues": {
+                "type": "integer"
+              }
+            }
+          },
+          "StudentFeeReport": {
+            "type": "object",
+            "properties": {
+              "studentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "studentName": {
+                "type": "string"
+              },
+              "totalFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "paidFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "pendingFees": {
+                "type": "number",
+                "format": "float"
+              },
+              "payments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "paths": {
+        "/admin/fees/category": {
+          "get": {
+            "summary": "List all fee categories",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of fee categories",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FeeCategory"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          },
+          "post": {
+            "summary": "Create a new fee category",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FeeCategory"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Fee category created successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/fees/assign": {
+          "post": {
+            "summary": "Assign fees to a student",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/StudentFeeAssignment"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Fee assigned successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "assignedAmount": {
+                          "type": "number",
+                          "format": "float"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student or fee category not found"
+              }
+            }
+          }
+        },
+        "/admin/fee-reminder/{studentFeeId}": {
+          "post": {
+            "summary": "Send fee reminder to parent",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "studentFeeId",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Student Fee ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Reminder sent successfully"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student fee record not found"
+              }
+            }
+          }
+        },
+        "/admin/students/{id}/docs": {
+          "get": {
+            "summary": "Get student documents",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Student ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Student documents",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "documents": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student not found"
+              }
+            }
+          }
+        },
+        "/admin/timetable/{class}/{section}": {
+          "get": {
+            "summary": "Get class timetable",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "class",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Class name/number"
+              },
+              {
+                "in": "path",
+                "name": "section",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Section name"
+              },
+              {
+                "in": "query",
+                "name": "date",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "Specific date (YYYY-MM-DD)"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Class timetable",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimetableSlot"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/substitute": {
+          "post": {
+            "summary": "Assign substitute teacher",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "timetableSlotId",
+                      "substituteTeacherId"
+                    ],
+                    "properties": {
+                      "timetableSlotId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "substituteTeacherId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Substitute teacher assigned successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        },
+                        "slot": {
+                          "$ref": "#/components/schemas/TimetableSlot"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Timetable slot or teacher not found"
+              },
+              "409": {
+                "description": "Teacher already has a conflicting slot"
+              }
+            }
+          }
+        },
+        "/admin/parent": {
+          "post": {
+            "summary": "Create a new parent",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Parent"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Parent created successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/student": {
+          "post": {
+            "summary": "Create a new student",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Student"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Student created successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/student/map-parent": {
+          "post": {
+            "summary": "Map a parent to a student",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ParentStudentMapping"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Parent mapped to student successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Parent or student not found"
+              }
+            }
+          }
+        },
+        "/admin/payment": {
+          "post": {
+            "summary": "Record a fee payment",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Payment recorded successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student or fee assignment not found"
+              }
+            }
+          }
+        },
+        "/admin/payment/{studentId}": {
+          "get": {
+            "summary": "Get payment history for a student",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "studentId",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Student ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of payments",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Payment"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student not found"
+              }
+            }
+          }
+        },
+        "/admin/students": {
+          "post": {
+            "summary": "Create a new student with additional details",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Student"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Student created successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          },
+          "get": {
+            "summary": "List all students",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "class",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by class"
+              },
+              {
+                "in": "query",
+                "name": "section",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by section"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of students",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Student"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/students/{id}/upload-docs": {
+          "post": {
+            "summary": "Upload documents for a student",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Student ID"
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "multipart/form-data": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "documents": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "binary"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Documents uploaded successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student not found"
+              }
+            }
+          }
+        },
+        "/admin/timetable": {
+          "post": {
+            "summary": "Create or update a timetable slot",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TimetableSlot"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Timetable slot created/updated successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "409": {
+                "description": "Time slot conflict"
+              }
+            }
+          }
+        },
+        "/admin/alternate-timetable": {
+          "post": {
+            "summary": "Set alternate timetable for a specific date",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AlternateTimetable"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Alternate timetable set successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/substitute/clear": {
+          "post": {
+            "summary": "Clear substitute teacher assignment",
+            "tags": [
+              "Admin"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "timetableSlotId"
+                    ],
+                    "properties": {
+                      "timetableSlotId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Substitute teacher assignment cleared successfully"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Timetable slot not found"
+              }
+            }
+          }
+        },
+        "/teacher/attendance": {
+          "post": {
+            "summary": "Mark attendance for students",
+            "tags": [
+              "Attendance"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Attendance"
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Attendance marked successfully"
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not a teacher"
+              }
+            }
+          }
+        },
+        "/admin/attendance/{id}": {
+          "patch": {
+            "summary": "Update attendance record",
+            "tags": [
+              "Attendance"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Attendance record ID"
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AttendanceUpdate"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Attendance updated successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Attendance"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Attendance record not found"
+              }
+            }
+          }
+        },
+        "/auth/login": {
+          "post": {
+            "summary": "Login for teachers and admins",
+            "tags": [
+              "Authentication"
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/LoginRequest"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Login successful",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/LoginResponse"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Invalid credentials",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/auth/parent-login": {
+          "post": {
+            "summary": "Request OTP for parent login",
+            "tags": [
+              "Authentication"
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "phone"
+                    ],
+                    "properties": {
+                      "phone": {
+                        "type": "string",
+                        "example": "+1234567890"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "OTP sent successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "OTP sent successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "404": {
+                "description": "Parent not found",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/auth/verify-otp": {
+          "post": {
+            "summary": "Verify OTP for parent login",
+            "tags": [
+              "Authentication"
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "phone",
+                      "otp"
+                    ],
+                    "properties": {
+                      "phone": {
+                        "type": "string",
+                        "example": "+1234567890"
+                      },
+                      "otp": {
+                        "type": "string",
+                        "example": "123456"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "OTP verified successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/LoginResponse"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Invalid or expired OTP",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/messages": {
+          "post": {
+            "summary": "Send a new message",
+            "tags": [
+              "Messages"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MessageCreateRequest"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Message sent successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/MessageResponse"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Cannot send message to this recipient"
+              },
+              "404": {
+                "description": "Recipient not found"
+              }
+            }
+          }
+        },
+        "/messages/inbox": {
+          "get": {
+            "summary": "List received messages",
+            "tags": [
+              "Messages"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "read",
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "Filter by read status"
+              },
+              {
+                "in": "query",
+                "name": "senderId",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by sender ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of messages",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "messages": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/MessageResponse"
+                          }
+                        },
+                        "unreadCount": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              }
+            }
+          }
+        },
+        "/messages/{id}/read": {
+          "patch": {
+            "summary": "Mark a message as read",
+            "tags": [
+              "Messages"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Message ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Message marked as read",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/MessageResponse"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not the recipient of the message"
+              },
+              "404": {
+                "description": "Message not found"
+              }
+            }
+          }
+        },
+        "/notifications": {
+          "get": {
+            "summary": "Get user's notifications",
+            "tags": [
+              "Notifications"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "read",
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "Filter by read status"
+              },
+              {
+                "in": "query",
+                "name": "type",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "QUERY_ASSIGNED",
+                    "QUERY_UPDATED",
+                    "QUERY_RESOLVED",
+                    "FEE_REMINDER"
+                  ]
+                },
+                "description": "Filter by notification type"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of notifications",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Notification"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              }
+            }
+          }
+        },
+        "/notifications/mark-all-read": {
+          "patch": {
+            "summary": "Mark all notifications as read",
+            "tags": [
+              "Notifications"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "All notifications marked as read",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "All notifications marked as read"
+                        },
+                        "count": {
+                          "type": "number",
+                          "description": "Number of notifications marked as read"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              }
+            }
+          }
+        },
+        "/notifications/{id}/read": {
+          "patch": {
+            "summary": "Mark a specific notification as read",
+            "tags": [
+              "Notifications"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Notification ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Notification marked as read",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Notification marked as read"
+                        },
+                        "notification": {
+                          "$ref": "#/components/schemas/Notification"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not the owner of the notification"
+              },
+              "404": {
+                "description": "Notification not found"
+              }
+            }
+          }
+        },
+        "/queries": {
+          "post": {
+            "summary": "Create a new query",
+            "tags": [
+              "Queries"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueryCreateRequest"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Query created successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/QueryResponse"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - User is not a parent or not the parent of the specified student"
+              }
+            }
+          },
+          "get": {
+            "summary": "List queries for the current user",
+            "tags": [
+              "Queries"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "status",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "OPEN",
+                    "IN_PROGRESS",
+                    "RESOLVED",
+                    "CLOSED"
+                  ]
+                },
+                "description": "Filter by query status"
+              },
+              {
+                "in": "query",
+                "name": "studentId",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by student ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of queries",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QueryResponse"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              }
+            }
+          }
+        },
+        "/queries/assigned": {
+          "get": {
+            "summary": "List queries assigned to the current teacher/admin",
+            "tags": [
+              "Queries"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "status",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "OPEN",
+                    "IN_PROGRESS",
+                    "RESOLVED",
+                    "CLOSED"
+                  ]
+                },
+                "description": "Filter by query status"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "List of assigned queries",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QueryResponse"
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - User is not a teacher or admin"
+              }
+            }
+          }
+        },
+        "/queries/{id}": {
+          "patch": {
+            "summary": "Update a query (status, resolution, or assignment)",
+            "tags": [
+              "Queries"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Query ID"
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "OPEN",
+                          "IN_PROGRESS",
+                          "RESOLVED",
+                          "CLOSED"
+                        ]
+                      },
+                      "resolutionComment": {
+                        "type": "string"
+                      },
+                      "assignedToId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID of teacher/admin to assign (admin only)"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Query updated successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/QueryResponse"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - User cannot modify this query"
+              },
+              "404": {
+                "description": "Query not found"
+              }
+            }
+          }
+        },
+        "/admin/reports/fee-summary": {
+          "get": {
+            "summary": "Get overall fee collection summary",
+            "tags": [
+              "Reports"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "fromDate",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "Start date for report period"
+              },
+              {
+                "in": "query",
+                "name": "toDate",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "End date for report period"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Fee summary report",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/FeeSummary"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/admin/reports/student/{id}/fee-report": {
+          "get": {
+            "summary": "Get detailed fee report for a student",
+            "tags": [
+              "Reports"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Student ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Student fee report",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/StudentFeeReport"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              },
+              "404": {
+                "description": "Student not found"
+              }
+            }
+          }
+        },
+        "/admin/reports/export": {
+          "get": {
+            "summary": "Export fee report in CSV format",
+            "tags": [
+              "Reports"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "fromDate",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "Start date for report period"
+              },
+              {
+                "in": "query",
+                "name": "toDate",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "End date for report period"
+              },
+              {
+                "in": "query",
+                "name": "type",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "SUMMARY",
+                    "DETAILED"
+                  ]
+                },
+                "description": "Type of report to export"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Fee report CSV file",
+                "content": {
+                  "text/csv": {
+                    "schema": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not an admin"
+              }
+            }
+          }
+        },
+        "/teacher/timetable": {
+          "get": {
+            "summary": "Get teacher's timetable",
+            "tags": [
+              "Teacher"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "query",
+                "name": "date",
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "description": "Specific date (YYYY-MM-DD) to get timetable for"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Teacher's timetable",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/TimetableSlot"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "isSubstituteAssignment": {
+                                "type": "boolean"
+                              },
+                              "originalTeacherName": {
+                                "type": "string"
+                              },
+                              "teachingTeacherName": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Not a teacher"
+              }
+            }
+          }
+        },
+        "/users": {
+          "post": {
+            "summary": "Create a new user",
+            "tags": [
+              "Users"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "User created successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "description": "Invalid request data"
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "409": {
+                "description": "Email already exists"
+              }
+            }
+          }
+        },
+        "/users/{id}": {
+          "get": {
+            "summary": "Get user by ID",
+            "tags": [
+              "Users"
+            ],
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+            "parameters": [
+              {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "User ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "User details retrieved successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              },
+              "401": {
+                "description": "Unauthorized"
+              },
+              "403": {
+                "description": "Forbidden - Can only access own profile unless admin"
+              },
+              "404": {
+                "description": "User not found"
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        {
+          "name": "Admin",
+          "description": "Administrative operations"
+        },
+        {
+          "name": "Attendance",
+          "description": "Attendance management operations"
+        },
+        {
+          "name": "Authentication",
+          "description": "User authentication endpoints"
+        },
+        {
+          "name": "Messages",
+          "description": "Message management endpoints"
+        },
+        {
+          "name": "Notifications",
+          "description": "Notification management endpoints"
+        },
+        {
+          "name": "Queries",
+          "description": "Query management endpoints"
+        },
+        {
+          "name": "Reports",
+          "description": "Report generation and management"
+        },
+        {
+          "name": "Teacher",
+          "description": "Teacher-specific operations"
+        },
+        {
+          "name": "Users",
+          "description": "User management operations"
+        }
+      ]
+    },
+    "customOptions": {
+      "persistAuthorization": true
+    }
+  };

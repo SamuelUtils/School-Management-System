@@ -1,0 +1,310 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  phone        String    @unique
+  role         Role
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  sentMessages        Message[]    @relation("SentMessages")
+  receivedMessages    Message[]    @relation("ReceivedMessages")
+
+  students     Student[] // A User (if they are a PARENT) can have multiple students linked to them
+  markedAttendance    Attendance[] @relation("MarkedAttendanceBy")
+  assignedFees        StudentFee[] @relation("AssignedFeesBy")
+  recordedPayments    FeePayment[] @relation("RecordedPaymentsBy")
+  teacherTimetableSlots   TimetableSlot[] @relation("TeacherTimetableSlots") 
+  substituteSlots         TimetableSlot[] @relation("SubstituteTeacherSlots")
+  notifications       Notification[] @relation("UserNotifications")
+
+  raisedQueries       Query[]      @relation("ParentQueries") // Queries raised by this user (if parent)
+  assignedQueries     Query[]      @relation("AssignedQueries") // Queries assigned to this user (if teacher/admin)
+}
+
+model Student {
+  id        String   @id @default(uuid())
+  name      String
+  
+  dateOfBirth     DateTime?     @db.Date // Optional for now, can be made required
+  gender          Gender?       // Optional, new enum
+  admissionNumber String        @unique // Unique admission number
+  currentClass    String        // e.g., "10", "12", "UKG" - Renamed from 'class' to avoid keyword clash
+  section         String?       // e.g., "A", "B", "Blue" - Optional
+  admissionDate   DateTime      @default(now()) @db.Date
+  status          StudentActiveStatus  @default(ACTIVE) // ACTIVE, INACTIVE, GRADUATED, DROPPED_OUT
+  
+  documents       Json?         @db.JsonB // Using PostgreSQL JSONB for better performance and querying
+
+  parentId String? // Foreign key to the User table (where User.role == PARENT)
+  parent   User?   @relation(fields: [parentId], references: [id])
+  attendances Attendance[]
+  fees     StudentFee[]
+  payments            FeePayment[] @relation("StudentPayments")
+  queries         Query[]       // Queries related to this student
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([parentId])
+  @@index([status])
+  @@index([admissionNumber])
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date // Store only the date part, not time
+  status    AttendanceStatus
+  timestamp DateTime @default(now()) // When the record was created/marked
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade) // If student is deleted, attendance record is also deleted
+
+  markedById String // User ID of the teacher or admin who marked/updated it
+  markedBy   User   @relation("MarkedAttendanceBy", fields: [markedById], references: [id])
+
+  @@unique([studentId, date]) // A student can only have one attendance status per day
+  @@index([date])
+  @@index([markedById])
+}
+
+model FeeCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique // Fee category names should be unique
+  description String?
+  baseAmount  Float    // Using Float for currency; consider Decimal for precision in real financial apps
+
+  studentFees StudentFee[] // Relation to student fee assignments
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudentFee {
+  id             String   @id @default(uuid())
+  assignedAmount Float    // Actual amount student needs to pay for this category
+  discountAmount Float    @default(0) // Discount applied for this student for this category
+
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  feeCategoryId String
+  feeCategory   FeeCategory @relation(fields: [feeCategoryId], references: [id], onDelete: Restrict) // Prevent deleting category if fees are assigned
+
+  assignedById  String   // User ID of the admin who assigned this fee
+  assignedBy    User     @relation("AssignedFeesBy", fields: [assignedById], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  payments      FeePayment[]
+
+  @@unique([studentId, feeCategoryId]) // Student can only have one fee entry per category
+  @@index([studentId])
+  @@index([feeCategoryId])
+  @@index([assignedById])
+}
+
+model FeePayment {
+  id            String        @id @default(uuid())
+  paidAmount    Float
+  paymentDate   DateTime      @db.Date // Date of payment
+  mode          PaymentMode   // e.g., CASH, ONLINE, CHEQUE
+  receiptNumber String        @unique // Auto-generated unique receipt number
+  notes         String?       // Optional notes about the payment
+
+  studentFeeId  String        // Links this payment to a specific StudentFee record
+  studentFee    StudentFee    @relation(fields: [studentFeeId], references: [id], onDelete:Restrict) // Don't delete StudentFee if payments exist
+
+  // For auditing and direct linking, though studentFee has studentId
+  studentId     String
+  student       Student       @relation("StudentPayments", fields: [studentId], references: [id], onDelete:Restrict)
+
+
+  createdById   String        // User ID of the admin who recorded this payment
+  createdBy     User          @relation("RecordedPaymentsBy", fields: [createdById], references: [id])
+
+  createdAt     DateTime      @default(now()) // Timestamp of when payment record was created
+
+  @@index([studentFeeId])
+  @@index([studentId])
+  @@index([createdById])
+  @@index([receiptNumber])
+}
+
+model TimetableSlot {
+  id        String   @id @default(uuid())
+  dayOfWeek DayOfWeek // Enum for days
+  startTime String   // Store as "HH:MM" (24-hour format)
+  endTime   String   // Store as "HH:MM" (24-hour format)
+  currentClass     String   // e.g., "Grade 10", "UKG" (Matches Student.class)
+  section   String?  // e.g., "A", "B" (Matches Student.section)
+  subject   String   // e.g., "Mathematics", "Physics"
+
+  date      DateTime? @db.Date // SPECIFIC DATE for this slot (overrides dayOfWeek if present)
+  teacherId String? // Optional: Link to the User ID of the teacher
+  teacher   User?   @relation("TeacherTimetableSlots", fields: [teacherId], references: [id], onDelete: SetNull)
+  substituteTeacherId String? // ID of the User who is substituting for this slot
+  substituteTeacher   User?   @relation("SubstituteTeacherSlots", fields: [substituteTeacherId], references: [id], onDelete: SetNull) // If sub teacher deleted, set to null
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint: One subject per class/section at a specific day/time slot.
+  // This helps prevent a teacher teaching two subjects at once in the same class,
+  // or two different subjects scheduled for the exact same period for a class.
+  // More complex conflict (teacher busy elsewhere) needs application logic.
+ 
+  @@unique([dayOfWeek, startTime, currentClass, section, subject, date], name: "timetable_slot_unique_key")
+  @@index([currentClass, section, dayOfWeek, date])
+  @@index([teacherId, date, dayOfWeek])
+  @@index([substituteTeacherId, date, dayOfWeek]) // Index for querying substitute assignments
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String   @db.Text // Use Text for potentially longer messages
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade) // If sender is deleted, their sent messages are deleted
+
+  recipientId String
+  recipient   User     @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade) // If recipient is deleted, messages to them are deleted
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([read])
+}
+
+// --- New Query Model (Parent Queries) ---
+model Query {
+  id                String      @id @default(uuid())
+  subject           String
+  message           String      @db.Text // Initial message from parent
+  status            QueryStatus @default(OPEN)
+  resolutionComment String?     @db.Text // Optional comment by teacher/admin when resolving
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  parentId          String    // User ID of the parent who raised the query
+  parent            User      @relation("ParentQueries", fields: [parentId], references: [id], onDelete: Cascade) // If parent deleted, their queries are deleted
+
+  studentId         String?   // Optional: If query is about a specific student
+  student           Student?  @relation(fields: [studentId], references: [id], onDelete:SetNull) // If student deleted, studentId becomes null
+
+  assignedToId      String?   // Optional: User ID of the teacher/admin this query is assigned to
+  assignedTo        User?     @relation("AssignedQueries", fields: [assignedToId], references: [id], onDelete: SetNull) // If assigned user deleted, assignedToId becomes null
+
+  // You might also want a QueryReply model if queries can have threaded conversations
+  // For now, resolutionComment is a simple way to close it out.
+
+  @@index([parentId])
+  @@index([studentId])
+  @@index([assignedToId])
+  @@index([status])
+}
+
+// --- New Notification Model ---
+model Notification {
+  id        String            @id @default(uuid())
+  type      NotificationType  // Enum to categorize notification
+  content   String            @db.Text // Detailed content of the notification
+  relatedId String?           // Optional: ID of the related entity (e.g., Message ID, Query ID, Student ID for attendance)
+  read      Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  userId    String            // The User who should receive this notification
+  user      User              @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade) // If user deleted, their notifications are deleted
+
+  @@index([userId])
+  @@index([userId, read]) // For quickly fetching unread notifications for a user
+}
+
+// Define or ensure NotificationType enum is comprehensive
+enum NotificationType {
+  // Fee related
+  FEE_ASSIGNED
+  PAYMENT_RECEIVED
+  FEE_OVERDUE_REMINDER
+  
+  // Attendance related
+  ATTENDANCE_ABSENT
+  
+  // Message related
+  NEW_MESSAGE
+  
+  // Query related
+  QUERY_ASSIGNED
+  QUERY_UPDATED
+  QUERY_RESOLVED
+}
+
+enum QueryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED // Could be an alternative to RESOLVED or a final state after resolution
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum StudentActiveStatus  {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  DROPPED_OUT
+  ON_LEAVE
+}
+
+enum PaymentMode {
+  CASH
+  ONLINE_TRANSFER
+  CHEQUE
+  CARD
+  MANUAL_ADJUSTMENT // For other types of entries
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+// We don't need a separate "Parent" table if a "User" with Role.PARENT represents a parent.
+// The Student table will link directly to the User ID of the parent.
+// If you wanted a separate Parent profile distinct from User login, you'd create a Parent model.
+// For this exercise, linking Student to a User of type PARENT is simpler.
+
+enum Role {
+  ADMIN
+  TEACHER
+  PARENT
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY // Optional, include if applicable
+  SUNDAY   // Optional, include if applicable
+}
+
