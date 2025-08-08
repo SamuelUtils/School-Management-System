@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2021", // Or newer
     "module": "commonjs",
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -23,6 +23,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist", "tests"
   ]
 }
